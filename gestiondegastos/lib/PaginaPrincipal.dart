@@ -4,7 +4,7 @@ class PaginaPrincipal extends StatelessWidget {
   final List<Map<String, dynamic>> expenses = [
     {"title": "Curso Dart", "amount": 199.90, "icon": Icons.work, "date": "2/10/2026"},
     {"title": "Cine", "amount": 200.00, "icon": Icons.movie, "date": "2/10/2026"},
-    {"title": "Mi Viaje", "amount": 234.00, "icon": Icons.flight, "date": "2/3/2026"},
+    {"title": "Mi Viaje", "amount": 225.00, "icon": Icons.flight, "date": "2/3/2026"},
     {"title": "Viaje Nuevo", "amount": 10000.00, "icon": Icons.flight, "date": "2/2/2026"},
     
   ];
