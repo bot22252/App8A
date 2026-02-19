@@ -41,7 +41,6 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
         title: const Text("Control Gastos Flutter"),
         backgroundColor: const Color.fromARGB(255, 56, 34, 109),
       ),
-
       body: OrientationBuilder(
         builder: (context, orientation) {
           if (orientation == Orientation.portrait) {
@@ -51,7 +50,6 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
           }
         },
       ),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.deepPurple[700],
         child: const Icon(Icons.add, color: Colors.white),
@@ -73,7 +71,7 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
     );
   }
 
-  // ===================== LAYOUT VERTICAL =====================
+  // ================= LAYOUT VERTICAL =================
   Widget _buildVerticalLayout() {
     return Column(
       children: [
@@ -83,23 +81,17 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
     );
   }
 
-  // ===================== LAYOUT HORIZONTAL =====================
+  // ================= LAYOUT HORIZONTAL =================
   Widget _buildHorizontalLayout() {
     return Row(
       children: [
-        Expanded(
-          flex: 1,
-          child: _buildGrafica(),
-        ),
-        Expanded(
-          flex: 2,
-          child: _buildLista(),
-        ),
+        Expanded(flex: 1, child: _buildGrafica()),
+        Expanded(flex: 2, child: _buildLista()),
       ],
     );
   }
 
-  // ===================== GRAFICA =====================
+  // ================= GRAFICA =================
   Widget _buildGrafica() {
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -166,8 +158,16 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
     );
   }
 
-  // ===================== LISTA =====================
+  // ================= LISTA =================
   Widget _buildLista() {
+
+    
+    final gastosOrdenados = [...expenses];
+    gastosOrdenados.sort(
+      (a, b) => (b["date"] as DateTime)
+          .compareTo(a["date"] as DateTime),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Card(
@@ -187,14 +187,38 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
                 ),
               )
             : ListView.builder(
-                itemCount: expenses.length,
+                itemCount: gastosOrdenados.length,
                 itemBuilder: (context, index) {
-                  final expense = expenses[index];
+                  final expense = gastosOrdenados[index];
+
                   return ListTile(
-                    leading:
-                        Icon(expense["icon"], color: Colors.deepPurple),
+                    onTap: () async {
+                      final gastoEditado = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PaginaAgregarProducto(
+                                gastoExistente: expense,
+                              ),
+                        ),
+                      );
+
+                      if (gastoEditado != null) {
+                        setState(() {
+                          final indexOriginal =
+                              expenses.indexOf(expense);
+                          expenses[indexOriginal] = gastoEditado;
+                        });
+                      }
+                    },
+                    leading: Icon(
+                      expense["icon"],
+                      color: Colors.deepPurple,
+                    ),
                     title: Text(expense["title"]),
-                    subtitle: Text(expense["date"]),
+                    subtitle: Text(
+                      "${expense["date"].day}/${expense["date"].month}/${expense["date"].year}",
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -209,7 +233,7 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
                               color: Colors.red),
                           onPressed: () {
                             setState(() {
-                              expenses.removeAt(index);
+                              expenses.remove(expense);
                             });
                           },
                         ),

@@ -1,120 +1,135 @@
 import 'package:flutter/material.dart';
 
-// Esta pantalla es para agregar un gasto desde un formulario.
-// Al guardar, regresa un Map con el mismo formato que usa la pantalla principal:
-// {"title": ..., "amount": ..., "icon": ..., "date": ...}
 class PaginaAgregarProducto extends StatefulWidget {
-  const PaginaAgregarProducto({super.key});
+
+  final Map<String, dynamic>? gastoExistente;
+
+  const PaginaAgregarProducto({
+    super.key,
+    this.gastoExistente,
+  });
 
   @override
-  State<PaginaAgregarProducto> createState() => _PaginaAgregarProductoState();
+  State<PaginaAgregarProducto> createState() =>
+      _PaginaAgregarProductoState();
 }
 
-class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
-  // Key del formulario: me sirve para validar todos los campos con validate()
+class _PaginaAgregarProductoState
+    extends State<PaginaAgregarProducto> {
+
   final _formKey = GlobalKey<FormState>();
 
-  // Controladores para leer lo que escriba el usuario en los campos
   final _titleCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
 
-  // Aquí guardo la fecha que el usuario selecciona (al inicio es null)
   DateTime? _selectedDate;
 
-  // Opciones del dropdown. Uso iconos porque así lo maneja mi pantalla principal.
   final List<Map<String, dynamic>> _options = const [
-    {"label": "Trabajo / Curso", "icon": Icons.work},
+    {"label": "Trabajo", "icon": Icons.work},
+    {"label": "Curso", "icon": Icons.school},
     {"label": "Cine", "icon": Icons.movie},
     {"label": "Viaje", "icon": Icons.flight},
   ];
 
-  // La opción seleccionada del dropdown
   late Map<String, dynamic> _selectedOption;
 
   @override
   void initState() {
     super.initState();
-    // Dejo seleccionada la primera opción por defecto
+
     _selectedOption = _options[0];
+
+    
+    if (widget.gastoExistente != null) {
+      final gasto = widget.gastoExistente!;
+
+      _titleCtrl.text = gasto["title"];
+      _amountCtrl.text = gasto["amount"].toString();
+      _selectedDate = gasto["date"];
+
+      // Buscar la opción correcta según el icono
+      final match = _options.firstWhere(
+        (opt) => opt["icon"] == gasto["icon"],
+        orElse: () => _options[0],
+      );
+
+      _selectedOption = match;
+    }
   }
 
   @override
   void dispose() {
-    // Importante: libero los controladores para evitar fugas de memoria
     _titleCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
   }
 
-  // Convierto la fecha a texto en formato d/m/yyyy para mostrarlo y guardarlo
-  String _formatDate(DateTime d) => "${d.day}/${d.month}/${d.year}";
+  String _formatDate(DateTime d) =>
+      "${d.day}/${d.month}/${d.year}";
 
-  // Abre el calendario para elegir una fecha y la guardo en _selectedDate
   Future<void> _pickDate() async {
     final now = DateTime.now();
 
     final picked = await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
+      initialDate: _selectedDate ?? now,
+      firstDate: DateTime(now.year - 5),
       lastDate: now,
     );
 
-    // Si el usuario cancela, no hago nada
     if (picked == null) return;
 
-    // setState para que se actualice el texto del botón con la fecha elegida
     setState(() => _selectedDate = picked);
   }
 
-  // Cancela y regresa a la pantalla anterior sin devolver datos
   void _cancel() {
     Navigator.pop(context);
   }
 
-  // Valido, armo el gasto y lo regreso a la pantalla principal
   void _save() {
-    // Primero valido los campos del formulario
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
 
-    // La fecha no está en un TextFormField, por eso la valido aquí
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Selecciona una fecha.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Selecciona una fecha."),
+        ),
+      );
       return;
     }
 
-    // Creo el Map con el mismo formato que ya usa la lista principal
-    final newExpense = <String, dynamic>{
+    final expense = <String, dynamic>{
       "title": _titleCtrl.text.trim(),
       "amount": double.parse(_amountCtrl.text.trim()),
-      "icon":
-          _selectedOption["icon"], // este icono se usa en el ListTile leading
-      "date": _formatDate(_selectedDate!), // aquí ya sé que no es null
+      "icon": _selectedOption["icon"],
+      "date": _selectedDate!, 
     };
 
-    // Cierro la pantalla y regreso el Map para que la pantalla principal lo agregue
-    Navigator.pop(context, newExpense);
+    Navigator.pop(context, expense);
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final isEditing = widget.gastoExistente != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Agregar gasto"),
-        backgroundColor: const Color.fromARGB(255, 56, 34, 109),
+        title: Text(
+          isEditing ? "Editar gasto" : "Agregar gasto",
+        ),
+        backgroundColor:
+            const Color.fromARGB(255, 56, 34, 109),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        // Form agrupa los campos y me permite validar todo con _formKey
         child: Form(
           key: _formKey,
-          // ListView evita overflow y permite scroll si el teclado tapa algo
           child: ListView(
             children: [
-              // Campo de título
+
+              // ===== TÍTULO =====
               TextFormField(
                 controller: _titleCtrl,
                 decoration: const InputDecoration(
@@ -129,10 +144,11 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
               ),
               const SizedBox(height: 12),
 
-              // Campo de monto
+              // ===== MONTO =====
               TextFormField(
                 controller: _amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
+                keyboardType:
+                    const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
                 decoration: const InputDecoration(
@@ -151,7 +167,7 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
               ),
               const SizedBox(height: 12),
 
-              // Dropdown para elegir el tipo
+              // ===== TIPO =====
               DropdownButtonFormField<Map<String, dynamic>>(
                 value: _selectedOption,
                 decoration: const InputDecoration(
@@ -160,9 +176,11 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
                 ),
                 items: _options
                     .map(
-                      (opt) => DropdownMenuItem<Map<String, dynamic>>(
+                      (opt) =>
+                          DropdownMenuItem<Map<String, dynamic>>(
                         value: opt,
-                        child: Text(opt["label"] as String),
+                        child:
+                            Text(opt["label"] as String),
                       ),
                     )
                     .toList(),
@@ -173,10 +191,11 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
               ),
               const SizedBox(height: 12),
 
-              // Botón para seleccionar fecha
+              // ===== FECHA =====
               OutlinedButton.icon(
                 onPressed: _pickDate,
-                icon: const Icon(Icons.calendar_month),
+                icon:
+                    const Icon(Icons.calendar_month),
                 label: Text(
                   _selectedDate == null
                       ? "Seleccionar fecha"
@@ -185,20 +204,25 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
               ),
               const SizedBox(height: 16),
 
-              // Botones finales: cancelar / guardar
+              // ===== BOTONES =====
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: _cancel,
-                      child: const Text("Cancelar"),
+                      child:
+                          const Text("Cancelar"),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _save,
-                      child: const Text("Guardar"),
+                      child: Text(
+                        isEditing
+                            ? "Actualizar"
+                            : "Guardar",
+                      ),
                     ),
                   ),
                 ],
