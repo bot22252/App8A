@@ -8,14 +8,13 @@ class PaginaAgregarProducto extends StatefulWidget {
 }
 
 class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
-  // Control del formulario (para validar después)
   final _formKey = GlobalKey<FormState>();
 
-  // Campos del formulario
   final _titleCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
 
-  // “Categorías” (mismas del equipo, por ícono)
+  DateTime? _selectedDate;
+
   final List<Map<String, dynamic>> _options = const [
     {"label": "Trabajo / Curso", "icon": Icons.work},
     {"label": "Cine", "icon": Icons.movie},
@@ -37,26 +36,46 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
     super.dispose();
   }
 
-  // Placeholder: en commit 2 aquí irá el DatePicker
-  void _pickDate() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Pendiente: seleccionar fecha")),
+  String _formatDate(DateTime d) => "${d.day}/${d.month}/${d.year}";
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
     );
+
+    if (picked == null) return;
+
+    setState(() => _selectedDate = picked);
   }
 
-  // Placeholder: cancelar sí puede cerrar desde el commit 1
   void _cancel() {
     Navigator.pop(context);
   }
 
-  // Placeholder: en commit 2 aquí irá el guardado real
   void _save() {
     final ok = _formKey.currentState?.validate() ?? false;
     if (!ok) return;
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Pendiente: guardar gasto")));
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Selecciona una fecha.")));
+      return;
+    }
+
+    final newExpense = <String, dynamic>{
+      "title": _titleCtrl.text.trim(),
+      "amount": double.parse(_amountCtrl.text.trim()),
+      "icon": _selectedOption["icon"],
+      "date": _formatDate(_selectedDate!),
+    };
+
+    Navigator.pop(context, newExpense);
   }
 
   @override
@@ -101,6 +120,7 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
                   final val = double.tryParse(t);
                   if (t.isEmpty) return "Escribe un monto.";
                   if (val == null) return "Monto inválido.";
+                  if (val <= 0) return "Debe ser mayor a 0.";
                   return null;
                 },
               ),
@@ -130,7 +150,11 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
               OutlinedButton.icon(
                 onPressed: _pickDate,
                 icon: const Icon(Icons.calendar_month),
-                label: const Text("Seleccionar fecha"),
+                label: Text(
+                  _selectedDate == null
+                      ? "Seleccionar fecha"
+                      : "Fecha: ${_formatDate(_selectedDate!)}",
+                ),
               ),
               const SizedBox(height: 16),
 
