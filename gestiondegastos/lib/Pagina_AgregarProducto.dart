@@ -23,7 +23,8 @@ class _PaginaAgregarProductoState extends State<PaginaAgregarProducto> {
 
   // Opciones del dropdown. Uso iconos porque así lo maneja mi pantalla principal.
   final List<Map<String, dynamic>> _options = const [
-    {"label": "Trabajo / Curso", "icon": Icons.work},
+    {"label": "Trabajo", "icon": Icons.work},
+    {"label": "Curso", "icon": Icons.school},
     {"label": "Cine", "icon": Icons.movie},
     {"label": "Viaje", "icon": Icons.flight},
   ];
